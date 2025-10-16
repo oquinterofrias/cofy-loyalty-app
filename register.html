@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - COF& Loyalty</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-white to-amber-50 min-h-screen p-4">
+  
+  <div class="max-w-md mx-auto">
+    <div class="bg-white rounded-2xl shadow-xl p-6 border-2" style="border-color: #F5A623">
+      
+      <!-- Logo -->
+      <div class="text-center mb-6">
+        <div class="w-24 h-24 mx-auto mb-4">
+          <svg viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="90" fill="none" stroke="#3D1E1E" stroke-width="6"/>
+            <g transform="translate(100, 65)">
+              <path d="M-25 0 L-15 -8 L-5 0 L5 -8 L15 0 L25 -8" fill="none" stroke="#F5A623" stroke-width="3"/>
+              <rect x="-30" y="5" width="60" height="40" rx="8" fill="#F5A623"/>
+              <circle cx="0" cy="-15" r="12" fill="#F5A623"/>
+              <line x1="0" y1="-25" x2="0" y2="-5" stroke="#3D1E1E" stroke-width="3"/>
+            </g>
+            <text x="100" y="150" font-size="38" font-weight="bold" text-anchor="middle" fill="#3D1E1E">COF&</text>
+            <text x="100" y="172" font-size="11" text-anchor="middle" fill="#7FA650" font-style="italic">Sustainably grown</text>
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold" style="color: #3D1E1E">Welcome to COF&</h2>
+        <p class="text-sm mb-1" style="color: #7FA650">Sustainably Grown Colombian Coffee</p>
+        <p class="text-xs text-gray-600">Create your loyalty card</p>
+      </div>
+      
+      <!-- Registration Form -->
+      <form id="registerForm" class="space-y-4">
+        
+        <div>
+          <label class="block text-sm font-semibold mb-1" style="color: #3D1E1E">Full Name *</label>
+          <input 
+            type="text" 
+            id="name" 
+            placeholder="John Doe" 
+            required 
+            class="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2"
+            style="border-color: #3D1E1E"
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold mb-1" style="color: #3D1E1E">Phone Number *</label>
+          <input 
+            type="tel" 
+            id="phone" 
+            placeholder="+1 (360) 555-0123" 
+            required 
+            class="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2"
+            style="border-color: #3D1E1E"
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold mb-1" style="color: #3D1E1E">Email *</label>
+          <input 
+            type="email" 
+            id="email" 
+            placeholder="john@example.com" 
+            required 
+            class="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2"
+            style="border-color: #3D1E1E"
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold mb-1" style="color: #3D1E1E">Birthday (Month & Day) *</label>
+          <div class="grid grid-cols-2 gap-3">
+            <select 
+              id="birthMonth" 
+              required 
+              class="px-4 py-3 border-2 rounded-lg focus:outline-none bg-white"
+              style="border-color: #3D1E1E"
+            >
+              <option value="">Month</option>
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03">March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select 
+              id="birthDay" 
+              required 
+              class="px-4 py-3 border-2 rounded-lg focus:outline-none bg-white"
+              style="border-color: #3D1E1E"
+            >
+              <option value="">Day</option>
+            </select>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">For birthday rewards & promotions</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input 
+              type="checkbox" 
+              id="acceptTerms" 
+              required 
+              class="mt-1 w-5 h-5 rounded"
+              style="accent-color: #7FA650"
+            />
+            <span class="text-sm text-gray-700">
+              I accept the <a href="#" class="underline font-semibold" style="color: #F5A623">Terms and Conditions</a> and <a href="#" class="underline font-semibold" style="color: #F5A623">Privacy Policy</a>
+            </span>
+          </label>
+        </div>
+        
+        <button 
+          type="submit" 
+          class="w-full py-4 rounded-lg font-semibold text-white text-lg shadow-lg hover:opacity-90 transition"
+          style="background-color: #F5A623"
+        >
+          Create My Card
+        </button>
+        
+        <div class="text-center pt-2">
+          <p class="text-xs text-gray-600">
+            📍 1209 Cornwall Ave • 📱 @cofy.wa
+          </p>
+        </div>
+        
+      </form>
+    </div>
+  </div>
+  
+  <script src="supabase-client.js"></script>
+  <script>
+    // Populate days dropdown (1-31)
+    const daySelect = document.getElementById('birthDay');
+    for (let i = 1; i <= 31; i++) {
+      const option = document.createElement('option');
+      option.value = String(i).padStart(2, '0');
+      option.textContent = i;
+      daySelect.appendChild(option);
+    }
+    
+    // Handle form submission
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Generate unique QR code
+      const qrCode = 'COFY-' + String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+      
+      // Prepare customer data
+      const customerData = {
+        qr_code: qrCode,
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        birth_month: document.getElementById('birthMonth').value,
+        birth_day: document.getElementById('birthDay').value,
+        punches: 0,
+        reward_code: null,
+        rewards_redeemed: 0
+      };
+      
+      // Show loading
+      const submitBtn = document.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Creating...';
+      submitBtn.disabled = true;
+      
+      try {
+        // Create customer in Supabase
+        const customer = await window.supabaseAPI.createCustomer(customerData);
+        
+        // Success!
+        alert(`✅ Welcome to COF&!\n\nYour loyalty card has been created successfully!\n\nYour QR Code: ${qrCode}\n\nShow this code to our barista to earn punches.`);
+        
+        // Redirect back to main app
+        window.location.href = 'index.html';
+        
+      } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error creating your card. Please try again or contact our barista for help.');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+    
+    // Test connection on load
+    window.onload = () => {
+      window.supabaseAPI.testConnection();
+    };
+  </script>
+  
+</body>
+</html>
