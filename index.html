@@ -241,7 +241,7 @@
         `;
       }
 
-      // Dashboard de admin (simplificado)
+      // Dashboard de admin
       function renderAdmin() {
         return `
           <div class="min-h-screen p-6 bg-gray-100">
@@ -254,8 +254,61 @@
                   </button>
                 </div>
               </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background-color: ${COLORS.secondary}20">
+                      <span class="text-2xl">👥</span>
+                    </div>
+                    <div>
+                      <p class="text-gray-600 text-sm">Total Customers</p>
+                      <p class="text-2xl font-bold" style="color: ${COLORS.primary}" id="totalCustomers">-</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background-color: ${COLORS.accent}20">
+                      <span class="text-2xl">☕</span>
+                    </div>
+                    <div>
+                      <p class="text-gray-600 text-sm">Punches Given</p>
+                      <p class="text-2xl font-bold" style="color: ${COLORS.primary}" id="totalPunches">-</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center bg-purple-100">
+                      <span class="text-2xl">🎁</span>
+                    </div>
+                    <div>
+                      <p class="text-gray-600 text-sm">Rewards Redeemed</p>
+                      <p class="text-2xl font-bold" style="color: ${COLORS.primary}" id="totalRewards">-</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="bg-white rounded-2xl shadow-xl p-6">
-                <p class="text-gray-600">Admin features coming soon...</p>
+                <h3 class="text-xl font-bold mb-4" style="color: ${COLORS.primary}">Quick Actions</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button onclick="viewAllCustomers()" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition">
+                    📋 View All Customers
+                  </button>
+                  <button onclick="exportData()" class="bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition">
+                    📊 Export Data
+                  </button>
+                  <button onclick="changePassword()" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition">
+                    🔐 Change Password
+                  </button>
+                  <button onclick="viewSettings()" class="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition">
+                    ⚙️ Settings
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -277,6 +330,7 @@
           isAdmin = true;
           currentView = 'admin';
           render();
+          loadAdminStats();
         } else {
           alert('❌ Incorrect password');
         }
@@ -405,6 +459,50 @@
         customers.slice(0, 10).forEach(c => {
           message += `${c.name}\n${c.phone} | ${c.punches}/10 punches\n\n`;
         });
+        alert(message);
+      }
+
+      async function loadAdminStats() {
+        const customers = await window.supabaseAPI.getCustomers();
+        const punches = await window.supabaseAPI.getAllPunches();
+        const rewards = await window.supabaseAPI.getAllRewards();
+
+        document.getElementById('totalCustomers').textContent = customers.length;
+        document.getElementById('totalPunches').textContent = punches.length;
+        document.getElementById('totalRewards').textContent = rewards.length;
+      }
+
+      async function viewAllCustomers() {
+        const customers = await window.supabaseAPI.getCustomers();
+        let message = `📋 ALL CUSTOMERS (${customers.length}):\n\n`;
+        customers.forEach((c, i) => {
+          message += `${i+1}. ${c.name}\n   📞 ${c.phone}\n   ☕ ${c.punches}/10 punches\n   🎁 ${c.rewards_redeemed} rewards\n\n`;
+        });
+        alert(message);
+      }
+
+      async function exportData() {
+        alert('📊 Export feature coming soon!\n\nYou can access your data directly in Supabase dashboard.');
+      }
+
+      async function changePassword() {
+        const newPassword = prompt('Enter new administrator password:');
+        if (newPassword && newPassword.length >= 6) {
+          await window.supabaseAPI.updateSettings('admin_password', newPassword);
+          alert('✅ Password changed successfully!');
+        } else {
+          alert('❌ Password must be at least 6 characters');
+        }
+      }
+
+      async function viewSettings() {
+        const settings = await window.supabaseAPI.getSettings();
+        let message = `⚙️ SYSTEM SETTINGS:\n\n`;
+        message += `Business: ${settings.business_name}\n`;
+        message += `Slogan: ${settings.slogan}\n`;
+        message += `Address: ${settings.address}\n`;
+        message += `Social: ${settings.social}\n`;
+        message += `TOAST Code: ${settings.toast_code}\n`;
         alert(message);
       }
 
