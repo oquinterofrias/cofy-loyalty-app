@@ -1,440 +1,418 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COF& Loyalty System</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
-  </style>
-</head>
-<body class="bg-gray-50">
-  <div id="app"></div>
-  
-  <script src="supabase-client.js"></script>
-  <script>
-    // Configuración de colores COF&
-    const COLORS = {
-      primary: '#3D1E1E',
-      secondary: '#F5A623',
-      accent: '#7FA650'
-    };
-    
-    // Estado de la aplicación
-    let isAdmin = false;
-    let currentView = 'login';
-    let currentCustomer = null;
-    
-    // Render principal
-    function render() {
-      const app = document.getElementById('app');
-      
-      if (currentView === 'login') {
-        app.innerHTML = renderLogin();
-      } else if (currentView === 'employee') {
-        app.innerHTML = renderEmployee();
-      } else if (currentView === 'admin') {
-        app.innerHTML = renderAdmin();
-      } else if (currentView === 'scan') {
-        app.innerHTML = renderScan();
-      } else if (currentView === 'validate') {
-        app.innerHTML = renderValidate();
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COF& Loyalty System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <div id="app"></div>
+
+    <script src="supabase-client.js"></script>
+    <script>
+      // Configuración de colores COF&
+      const COLORS = {
+        primary: '#3D1E1E',
+        secondary: '#F5A623',
+        accent: '#7FA650'
+      };
+
+      // Estado de la aplicación
+      let currentView = 'login';
+      let isAdmin = false;
+      let currentCustomer = null;
+      let html5QrCode = null;
+
+      // Renderizar app
+      function render() {
+        const app = document.getElementById('app');
+        
+        if (currentView === 'login') {
+          app.innerHTML = renderLogin();
+        } else if (currentView === 'employee') {
+          app.innerHTML = renderEmployee();
+        } else if (currentView === 'admin') {
+          app.innerHTML = renderAdmin();
+        } else if (currentView === 'scanQR') {
+          app.innerHTML = renderScanQR();
+          setTimeout(startQRScanner, 100);
+        } else if (currentView === 'givePunch') {
+          app.innerHTML = renderGivePunch();
+        } else if (currentView === 'validateReward') {
+          app.innerHTML = renderValidateReward();
+        }
       }
-    }
-    
-    // Pantalla de login
-    function renderLogin() {
-      return `
-        <div class="min-h-screen flex items-center justify-center p-4" style="background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);">
-          <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full border-4" style="border-color: ${COLORS.primary}">
-            <div class="text-center mb-8">
-              <div class="w-32 h-32 mx-auto mb-4">
-                <img src="logo.png" alt="COF& Logo" class="w-full h-full object-contain">
+
+      // Pantalla de login
+      function renderLogin() {
+        return `
+          <div class="min-h-screen flex items-center justify-center p-6">
+            <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border-4" style="border-color: ${COLORS.primary}">
+              <div class="text-center mb-8">
+                <div class="w-32 h-32 mx-auto mb-4">
+                  <img src="logo.png" alt="COF& Logo" class="w-full h-full object-contain">
+                </div>
+                <h1 class="text-3xl font-bold mb-2" style="color: ${COLORS.primary}">COF& Loyalty</h1>
+                <p class="text-gray-600">Admin System</p>
               </div>
-              <h1 class="text-3xl font-bold mb-2" style="color: ${COLORS.primary}">COF& Loyalty</h1>
-              <p class="text-gray-600">Admin System</p>
-            </div>
-            
-            <button onclick="loginEmployee()" class="w-full py-4 rounded-xl font-semibold text-white mb-4 hover:opacity-90 transition" style="background-color: ${COLORS.secondary}">
-              📷 Start as Employee
-            </button>
-            
-            <div class="relative my-6">
-              <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300"></div></div>
-              <div class="relative flex justify-center text-sm"><span class="px-2 bg-white text-gray-500">or</span></div>
-            </div>
-            
-            <input type="password" id="adminPassword" placeholder="Administrator Password" class="w-full px-4 py-3 border-2 rounded-xl mb-4 focus:outline-none" style="border-color: ${COLORS.primary}" onkeypress="if(event.key==='Enter') loginAdmin()">
-            <button onclick="loginAdmin()" class="w-full py-4 rounded-xl font-semibold text-white hover:opacity-90 transition" style="background-color: ${COLORS.primary}">
-              ⚙️ Login as Administrator
-            </button>
-          </div>
-        </div>
-      `;
-    }
-    
-    // Dashboard de empleado
-    function renderEmployee() {
-      return `
-        <div class="min-h-screen bg-gray-50">
-          <header class="text-white p-4 shadow-lg" style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)">
-            <div class="max-w-4xl mx-auto flex justify-between items-center">
-              <div>
-                <h1 class="text-xl font-bold">COF&</h1>
-                <p class="text-xs opacity-90">Employee Dashboard</p>
-              </div>
-              <button onclick="logout()" class="px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition">Logout</button>
-            </div>
-          </header>
-          
-          <main class="max-w-4xl mx-auto p-6">
-            <h2 class="text-2xl font-bold mb-6" style="color: ${COLORS.primary}">Select an Action</h2>
-            
-            <div class="space-y-4">
-              <button onclick="currentView='scan'; render();" class="w-full py-6 bg-white rounded-xl shadow-lg font-semibold text-lg border-2 hover:shadow-xl transition" style="border-color: ${COLORS.secondary}; color: ${COLORS.secondary}">
-                📷 Scan Customer QR Code
+              
+              <button onclick="loginEmployee()" class="w-full py-4 rounded-xl font-semibold text-white mb-4 hover:opacity-90 transition" style="background-color: ${COLORS.secondary}">
+                📷 Start as Employee
               </button>
               
-              <button onclick="currentView='validate'; render();" class="w-full py-6 bg-white rounded-xl shadow-lg font-semibold text-lg border-2 hover:shadow-xl transition" style="border-color: ${COLORS.accent}; color: ${COLORS.accent}">
-                🎁 Validate Reward Code
-              </button>
+              <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300"></div></div>
+                <div class="relative flex justify-center text-sm"><span class="px-2 bg-white text-gray-500">or</span></div>
+              </div>
               
-              <button onclick="window.open('register.html', '_blank')" class="w-full py-6 bg-white rounded-xl shadow-lg font-semibold text-lg border-2 hover:shadow-xl transition" style="border-color: ${COLORS.primary}; color: ${COLORS.primary}">
-                ➕ Register New Customer
+              <input type="password" id="adminPassword" placeholder="Administrator Password" class="w-full px-4 py-3 border-2 rounded-xl mb-4 focus:outline-none" style="border-color: ${COLORS.primary}" onkeypress="if(event.key==='Enter') loginAdmin()">
+              <button onclick="loginAdmin()" class="w-full py-4 rounded-xl font-semibold text-white hover:opacity-90 transition" style="background-color: ${COLORS.primary}">
+                ⚙️ Login as Administrator
               </button>
             </div>
-          </main>
-        </div>
-      `;
-    }
-    
-    // Dashboard de administrador
-    function renderAdmin() {
-      return `
-        <div class="min-h-screen bg-gray-50">
-          <header class="text-white p-4 shadow-lg" style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)">
-            <div class="max-w-4xl mx-auto flex justify-between items-center">
-              <div>
-                <h1 class="text-xl font-bold">COF&</h1>
-                <p class="text-xs opacity-90">Administrator Dashboard</p>
-              </div>
-              <button onclick="logout()" class="px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition">Logout</button>
-            </div>
-          </header>
-          
-          <main class="max-w-4xl mx-auto p-6">
-            <h2 class="text-2xl font-bold mb-6" style="color: ${COLORS.primary}">Monthly Statistics</h2>
-            
-            <div id="stats" class="grid grid-cols-2 gap-4 mb-6">
-              <div class="bg-white rounded-xl shadow p-6 border-2" style="border-color: ${COLORS.primary}">
-                <p class="text-gray-600 text-sm">Loading...</p>
-              </div>
-            </div>
-            
-            <div class="space-y-3">
-              <button onclick="viewCustomers()" class="w-full bg-white rounded-xl shadow p-4 text-left font-semibold border-2 hover:shadow-lg transition" style="border-color: ${COLORS.primary}">
-                👥 Customer Database
-              </button>
-              <button onclick="alert('Reports feature coming soon!')" class="w-full bg-white rounded-xl shadow p-4 text-left font-semibold border-2 hover:shadow-lg transition" style="border-color: ${COLORS.accent}">
-                📊 Reports & Export
-              </button>
-            </div>
-          </main>
-        </div>
-      `;
-    }
-    
-    // Escanear QR
-    function renderScan() {
-      return `
-        <div class="min-h-screen bg-gray-50">
-          <header class="text-white p-4 shadow-lg" style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)">
-            <div class="max-w-4xl mx-auto flex items-center gap-4">
-              <button onclick="currentView='employee'; render();" class="text-white">← Back</button>
-              <h1 class="text-xl font-bold">Scan Customer QR</h1>
-            </div>
-          </header>
-          
-          <main class="max-w-md mx-auto p-6">
-            <div class="bg-white rounded-xl shadow-lg p-8 text-center border-2" style="border-color: ${COLORS.secondary}">
-              <div class="mb-6">
-                <svg class="w-24 h-24 mx-auto" style="color: ${COLORS.secondary}" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm-2 14h8v-8H3v8zm2-6h4v4H5v-4zm8-10v8h8V3h-8zm6 6h-4V5h4v4zm-6 4h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v4h-2v-4zm2-2h2v2h-2v-2zm0-4h2v2h-2v-2z"/>
-                </svg>
-              </div>
-              <h3 class="text-xl font-semibold mb-4" style="color: ${COLORS.primary}">Point camera at customer's QR</h3>
-              <p class="text-gray-600 mb-6 text-sm">Demo: Enter QR code manually</p>
-              <input type="text" id="qrInput" placeholder="e.g., COFY-0001" class="w-full px-4 py-3 border-2 rounded-lg mb-4 text-center" style="border-color: ${COLORS.primary}">
-              <button onclick="scanQR()" class="w-full py-3 rounded-lg font-semibold text-white" style="background-color: ${COLORS.secondary}">
-                Scan
-              </button>
-            </div>
-            
-            <div id="customerInfo"></div>
-          </main>
-        </div>
-      `;
-    }
-    
-    // Validar premio
-    function renderValidate() {
-      return `
-        <div class="min-h-screen bg-gray-50">
-          <header class="text-white p-4 shadow-lg" style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)">
-            <div class="max-w-4xl mx-auto flex items-center gap-4">
-              <button onclick="currentView='employee'; render();" class="text-white">← Back</button>
-              <h1 class="text-xl font-bold">Validate Reward</h1>
-            </div>
-          </header>
-          
-          <main class="max-w-md mx-auto p-6">
-            <div class="bg-white rounded-xl shadow-lg p-8 text-center border-2" style="border-color: ${COLORS.accent}">
-              <div class="mb-6">
-                <svg class="w-24 h-24 mx-auto" style="color: ${COLORS.accent}" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-              </div>
-              <h3 class="text-xl font-semibold mb-4" style="color: ${COLORS.primary}">Enter Reward Code</h3>
-              <input type="text" id="rewardInput" placeholder="6-character code" maxlength="6" class="w-full px-4 py-3 border-2 rounded-lg mb-4 text-center uppercase text-xl font-mono" style="border-color: ${COLORS.primary}">
-              <button onclick="validateReward()" class="w-full py-3 rounded-lg font-semibold text-white" style="background-color: ${COLORS.accent}">
-                Validate
-              </button>
-            </div>
-            
-            <div id="rewardInfo"></div>
-          </main>
-        </div>
-      `;
-    }
-    
-    // Funciones
-    function loginEmployee() {
-      isAdmin = false;
-      currentView = 'employee';
-      render();
-    }
-    
-    async function loginAdmin() {
-      const password = document.getElementById('adminPassword').value;
-      const settings = await window.supabaseAPI.getSettings();
-      
-      if (password === settings.admin_password) {
-        isAdmin = true;
-        currentView = 'admin';
-        render();
-        loadStats();
-      } else {
-        alert('❌ Incorrect password');
-      }
-    }
-    
-    function logout() {
-      currentView = 'login';
-      currentCustomer = null;
-      render();
-    }
-    
-    async function loadStats() {
-      const stats = await window.supabaseAPI.getMonthlyStats();
-      document.getElementById('stats').innerHTML = `
-        <div class="bg-white rounded-xl shadow p-6 border-2" style="border-color: ${COLORS.primary}">
-          <p class="text-gray-600 text-sm mb-1">Total Customers</p>
-          <p class="text-3xl font-bold" style="color: ${COLORS.primary}">${stats.totalCustomers}</p>
-        </div>
-        <div class="bg-white rounded-xl shadow p-6 border-2" style="border-color: ${COLORS.accent}">
-          <p class="text-gray-600 text-sm mb-1">Active Customers</p>
-          <p class="text-3xl font-bold" style="color: ${COLORS.accent}">${stats.activeCustomers}</p>
-        </div>
-        <div class="bg-white rounded-xl shadow p-6 border-2" style="border-color: ${COLORS.secondary}">
-          <p class="text-gray-600 text-sm mb-1">Rewards This Month</p>
-          <p class="text-3xl font-bold" style="color: ${COLORS.secondary}">${stats.monthlyRewards}</p>
-        </div>
-        <div class="bg-white rounded-xl shadow p-6 border-2 border-blue-300">
-          <p class="text-gray-600 text-sm mb-1">Punches Given</p>
-          <p class="text-3xl font-bold text-blue-600">${stats.monthlyPunches}</p>
-        </div>
-      `;
-    }
-    
-    async function scanQR() {
-      const qr = document.getElementById('qrInput').value.trim().toUpperCase();
-      if (!qr) {
-        alert('Please enter a QR code');
-        return;
-      }
-      
-      const customer = await window.supabaseAPI.getCustomerByQR(qr);
-      if (!customer) {
-        alert('❌ Customer not found');
-        return;
-      }
-      
-      currentCustomer = customer;
-      showCustomerInfo();
-    }
-    
-    function showCustomerInfo() {
-      const c = currentCustomer;
-      const punches = '☕'.repeat(c.punches) + '⚪'.repeat(10 - c.punches);
-      
-      document.getElementById('customerInfo').innerHTML = `
-        <div class="mt-6 bg-white rounded-xl shadow-lg p-6 border-2" style="border-color: ${COLORS.accent}">
-          <div class="text-center mb-4">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: ${COLORS.accent}">
-              <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            </div>
-            <h3 class="text-xl font-bold mb-2" style="color: ${COLORS.primary}">✓ CUSTOMER IDENTIFIED</h3>
-          </div>
-          
-          <div class="space-y-2 mb-4">
-            <p class="text-gray-600">Name: <span class="font-semibold" style="color: ${COLORS.primary}">${c.name}</span></p>
-            <div class="flex justify-center gap-1 text-2xl my-3">${punches}</div>
-            <p class="text-center text-lg font-semibold" style="color: ${COLORS.secondary}">${c.punches} of 10 punches</p>
-          </div>
-          
-          <div class="flex gap-3">
-            <button onclick="currentView='employee'; currentCustomer=null; render();" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold">Cancel</button>
-            <button onclick="givePunch()" class="flex-1 text-white py-3 rounded-lg font-semibold" style="background-color: ${COLORS.secondary}">Give 1 Punch</button>
-          </div>
-        </div>
-      `;
-    }
-    
-    async function givePunch() {
-      const c = currentCustomer;
-      const newPunches = c.punches + 1;
-      let rewardCode = c.reward_code;
-      
-      if (newPunches === 10) {
-        const usedCodes = [];
-        rewardCode = window.supabaseAPI.getRandomRewardCode(usedCodes);
-      }
-      
-      await window.supabaseAPI.updateCustomer(c.id, {
-        punches: newPunches,
-        reward_code: rewardCode,
-        last_visit: new Date().toISOString()
-      });
-      
-      await window.supabaseAPI.addPunch(c.id, c.punches, newPunches);
-      
-      if (newPunches === 10) {
-        alert(`🎉 Reward unlocked!\nCode: ${rewardCode}\n\nCustomer can now redeem their free drink!`);
-      } else {
-        alert(`✅ Punch added!\n${10 - newPunches} more to go for free drink`);
-      }
-      
-      currentView = 'employee';
-      currentCustomer = null;
-      render();
-    }
-    
-    async function validateReward() {
-      const code = document.getElementById('rewardInput').value.trim().toUpperCase();
-      if (!code || code.length !== 6) {
-        alert('Please enter a 6-character code');
-        return;
-      }
-      
-      const customers = await window.supabaseAPI.getCustomers();
-      const customer = customers.find(c => c.reward_code === code && c.punches === 10);
-      
-      if (!customer) {
-        alert('❌ Invalid code or reward not ready');
-        return;
-      }
-      
-      currentCustomer = customer;
-      showRewardInfo();
-    }
-    
-    async function showRewardInfo() {
-      const c = currentCustomer;
-      const settings = await window.supabaseAPI.getSettings();
-      
-      document.getElementById('rewardInfo').innerHTML = `
-        <div class="mt-6 bg-white rounded-xl shadow-lg p-6 border-2" style="border-color: ${COLORS.accent}">
-          <div class="text-center mb-4">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: ${COLORS.accent}">
-              <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            </div>
-            <h3 class="text-xl font-bold mb-2" style="color: ${COLORS.accent}">✓ VALID CODE</h3>
-          </div>
-          
-          <div class="space-y-2 mb-4">
-            <p class="text-gray-600">Customer: <span class="font-semibold" style="color: ${COLORS.primary}">${c.name}</span></p>
-            <p class="text-gray-600">Reward: <span class="font-semibold" style="color: ${COLORS.accent}">FREE DRINK</span></p>
-          </div>
-          
-          <div class="bg-amber-50 rounded-lg p-4 mb-4 border-2" style="border-color: ${COLORS.secondary}">
-            <p class="text-sm text-gray-600 mb-2">Code for TOAST POS:</p>
-            <p class="text-3xl font-bold text-center" style="color: ${COLORS.secondary}">${settings.toast_code}</p>
-            <p class="text-sm text-gray-600 text-center mt-2">Enter this code in TOAST to apply free drink</p>
-          </div>
-          
-          <div class="flex gap-3">
-            <button onclick="currentView='employee'; currentCustomer=null; render();" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold">Cancel</button>
-            <button onclick="confirmRedemption()" class="flex-1 text-white py-3 rounded-lg font-semibold" style="background-color: ${COLORS.accent}">✓ Confirm</button>
-          </div>
-        </div>
-      `;
-    }
-    
-    async function confirmRedemption() {
-      const c = currentCustomer;
-      
-      await window.supabaseAPI.updateCustomer(c.id, {
-        punches: 0,
-        reward_code: null,
-        rewards_redeemed: c.rewards_redeemed + 1,
-        last_visit: new Date().toISOString()
-      });
-      
-      await window.supabaseAPI.redeemReward(c.id, c.reward_code);
-      
-      const settings = await window.supabaseAPI.getSettings();
-      alert(`✅ Reward redeemed!\n\nUse code "${settings.toast_code}" in TOAST POS\n\nCustomer's card reset to 0/10`);
-      
-      currentView = 'employee';
-      currentCustomer = null;
-      render();
-    }
-    
-    async function viewCustomers() {
-      const customers = await window.supabaseAPI.getCustomers();
-      let html = '<div class="space-y-3">';
-      
-      customers.forEach(c => {
-        const punches = '☕'.repeat(c.punches) + '⚪'.repeat(10 - c.punches);
-        html += `
-          <div class="bg-white rounded-lg shadow p-4 border-2" style="border-color: ${COLORS.secondary}">
-            <div class="flex justify-between mb-2">
-              <div>
-                <p class="font-semibold">${c.name}</p>
-                <p class="text-sm text-gray-600">${c.phone}</p>
-              </div>
-              <div class="text-right">
-                <p class="text-2xl font-bold" style="color: ${COLORS.secondary}">${c.punches}/10</p>
-              </div>
-            </div>
-            <div class="text-xl">${punches}</div>
-            <p class="text-xs text-gray-500 mt-2">QR: ${c.qr_code}</p>
           </div>
         `;
-      });
-      
-      html += '</div>';
-      alert('Customer list feature - check console');
-      console.log('Customers:', customers);
-    }
-    
-    // Inicializar
-    window.onload = () => {
-      render();
-      window.supabaseAPI.testConnection();
-    };
-  </script>
-</body>
+      }
+
+      // Dashboard de empleado
+      function renderEmployee() {
+        return `
+          <div class="min-h-screen p-6" style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)">
+            <div class="max-w-md mx-auto">
+              <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-2xl font-bold" style="color: ${COLORS.primary}">Employee Mode</h2>
+                  <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
+                    ← Logout
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <button onclick="currentView='scanQR'; render();" class="w-full bg-white rounded-2xl shadow-xl p-8 text-left hover:shadow-2xl transition">
+                  <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background-color: ${COLORS.secondary}20">
+                      <span class="text-3xl">📷</span>
+                    </div>
+                    <div>
+                      <h3 class="text-xl font-bold" style="color: ${COLORS.primary}">Scan Customer QR</h3>
+                      <p class="text-gray-600 text-sm">Give a punch or validate reward</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button onclick="viewCustomers()" class="w-full bg-white rounded-2xl shadow-xl p-8 text-left hover:shadow-2xl transition">
+                  <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background-color: ${COLORS.accent}20">
+                      <span class="text-3xl">👥</span>
+                    </div>
+                    <div>
+                      <h3 class="text-xl font-bold" style="color: ${COLORS.primary}">View Customers</h3>
+                      <p class="text-gray-600 text-sm">See all registered customers</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Pantalla de escaneo QR
+      function renderScanQR() {
+        return `
+          <div class="min-h-screen p-6" style="background-color: ${COLORS.primary}">
+            <div class="max-w-md mx-auto">
+              <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-2xl font-bold" style="color: ${COLORS.primary}">Scan QR Code</h2>
+                  <button onclick="stopQRScanner(); currentView='employee'; render();" class="text-gray-500 hover:text-gray-700">
+                    ✕ Close
+                  </button>
+                </div>
+                <p class="text-gray-600 text-sm">Point camera at customer's QR code</p>
+              </div>
+
+              <div class="bg-white rounded-2xl shadow-xl p-4 mb-4">
+                <div id="qr-reader" class="w-full"></div>
+              </div>
+
+              <div class="bg-white rounded-2xl shadow-xl p-6">
+                <p class="text-center text-gray-600 text-sm">
+                  📱 Make sure to allow camera access
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Pantalla para dar punch
+      function renderGivePunch() {
+        const c = currentCustomer;
+        if (!c) return '';
+
+        const filledPunches = '☕'.repeat(c.punches);
+        const emptyPunches = '⚪'.repeat(10 - c.punches);
+        
+        return `
+          <div class="min-h-screen p-6" style="background: linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.secondary} 100%)">
+            <div class="max-w-md mx-auto">
+              <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <div class="text-center mb-6">
+                  <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center" style="background-color: ${COLORS.secondary}20">
+                    <span class="text-4xl">👤</span>
+                  </div>
+                  <h2 class="text-2xl font-bold mb-1" style="color: ${COLORS.primary}">${c.name}</h2>
+                  <p class="text-gray-600">${c.phone}</p>
+                  <p class="text-gray-500 text-sm">${c.email}</p>
+                </div>
+
+                <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                  <p class="text-sm font-semibold mb-3" style="color: ${COLORS.primary}">Current Progress</p>
+                  <div class="text-3xl mb-3 text-center">${filledPunches}${emptyPunches}</div>
+                  <div class="flex justify-between text-lg font-bold" style="color: ${COLORS.secondary}">
+                    <span>${c.punches} / 10 punches</span>
+                    ${c.punches === 9 ? '<span class="text-red-500">🎁 Next = FREE!</span>' : ''}
+                  </div>
+                </div>
+
+                <button onclick="givePunch()" class="w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg mb-3" style="background-color: ${COLORS.secondary}">
+                  ☕ Give 1 Punch
+                </button>
+                
+                <button onclick="currentView='employee'; currentCustomer=null; render();" class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Pantalla para validar premio
+      function renderValidateReward() {
+        const c = currentCustomer;
+        if (!c || !c.reward_code) return '';
+
+        return `
+          <div class="min-h-screen p-6" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%)">
+            <div class="max-w-md mx-auto">
+              <div class="bg-white rounded-2xl shadow-xl p-8">
+                <div class="text-center mb-6">
+                  <div class="text-6xl mb-4">🎉</div>
+                  <h2 class="text-3xl font-bold mb-2" style="color: ${COLORS.primary}">Reward Ready!</h2>
+                  <p class="text-xl font-semibold mb-1">${c.name}</p>
+                  <p class="text-gray-600">${c.phone}</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 mb-6 text-white text-center">
+                  <p class="text-sm mb-2 opacity-90">Free Drink Code:</p>
+                  <p class="text-4xl font-bold tracking-wider mb-2">${c.reward_code}</p>
+                  <p class="text-xs opacity-75">Use this code in TOAST POS</p>
+                </div>
+
+                <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-6">
+                  <p class="text-sm font-semibold text-yellow-800 mb-2">📋 Instructions:</p>
+                  <ol class="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
+                    <li>Open TOAST POS</li>
+                    <li>Add free drink item</li>
+                    <li>Apply discount code: <strong>${c.reward_code}</strong></li>
+                    <li>Confirm redemption below</li>
+                  </ol>
+                </div>
+
+                <button onclick="confirmRedemption()" class="w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg mb-3" style="background-color: ${COLORS.accent}">
+                  ✓ Confirm Redemption
+                </button>
+                
+                <button onclick="currentView='employee'; currentCustomer=null; render();" class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Dashboard de admin (simplificado)
+      function renderAdmin() {
+        return `
+          <div class="min-h-screen p-6 bg-gray-100">
+            <div class="max-w-6xl mx-auto">
+              <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-2xl font-bold" style="color: ${COLORS.primary}">Administrator Dashboard</h2>
+                  <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
+                    ← Logout
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl shadow-xl p-6">
+                <p class="text-gray-600">Admin features coming soon...</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Funciones de login
+      function loginEmployee() {
+        isAdmin = false;
+        currentView = 'employee';
+        render();
+      }
+
+      async function loginAdmin() {
+        const password = document.getElementById('adminPassword').value;
+        const settings = await window.supabaseAPI.getSettings();
+        
+        if (password === settings.admin_password) {
+          isAdmin = true;
+          currentView = 'admin';
+          render();
+        } else {
+          alert('❌ Incorrect password');
+        }
+      }
+
+      function logout() {
+        currentView = 'login';
+        isAdmin = false;
+        currentCustomer = null;
+        stopQRScanner();
+        render();
+      }
+
+      // Funciones de escaneo QR
+      function startQRScanner() {
+        if (html5QrCode) {
+          stopQRScanner();
+        }
+
+        html5QrCode = new Html5Qrcode("qr-reader");
+        
+        html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          async (decodedText) => {
+            stopQRScanner();
+            await handleScannedQR(decodedText);
+          }
+        ).catch(err => {
+          console.error("Camera error:", err);
+          alert("❌ Cannot access camera. Please allow camera permissions.");
+          currentView = 'employee';
+          render();
+        });
+      }
+
+      function stopQRScanner() {
+        if (html5QrCode) {
+          html5QrCode.stop().then(() => {
+            html5QrCode.clear();
+            html5QrCode = null;
+          }).catch(err => {
+            console.error("Error stopping scanner:", err);
+          });
+        }
+      }
+
+      async function handleScannedQR(qrCode) {
+        const customer = await window.supabaseAPI.getCustomerByQR(qrCode);
+        
+        if (!customer) {
+          alert('❌ Customer not found');
+          currentView = 'employee';
+          render();
+          return;
+        }
+
+        currentCustomer = customer;
+
+        if (customer.punches >= 10 && customer.reward_code) {
+          currentView = 'validateReward';
+        } else {
+          currentView = 'givePunch';
+        }
+        render();
+      }
+
+      async function givePunch() {
+        const c = currentCustomer;
+        const newPunches = c.punches + 1;
+        let rewardCode = c.reward_code;
+
+        if (newPunches >= 10 && !rewardCode) {
+          rewardCode = generateRewardCode();
+        }
+
+        await window.supabaseAPI.updateCustomer(c.id, {
+          punches: newPunches,
+          reward_code: rewardCode,
+          last_visit: new Date().toISOString()
+        });
+
+        await window.supabaseAPI.addPunch(c.id, c.punches, newPunches);
+
+        if (newPunches >= 10 && rewardCode) {
+          alert(`🎉 ${c.name} completed 10 punches!\n\nReward code: ${rewardCode}\n\nUse in TOAST POS for free drink.`);
+        } else {
+          alert(`✅ Punch added!\n\n${c.name} now has ${newPunches}/10 punches.`);
+        }
+
+        currentView = 'employee';
+        currentCustomer = null;
+        render();
+      }
+
+      async function confirmRedemption() {
+        const c = currentCustomer;
+        
+        await window.supabaseAPI.updateCustomer(c.id, {
+          punches: 0,
+          reward_code: null,
+          rewards_redeemed: c.rewards_redeemed + 1,
+          last_visit: new Date().toISOString()
+        });
+        
+        await window.supabaseAPI.redeemReward(c.id, c.reward_code);
+        
+        alert(`✅ Reward redeemed!\n\nCode "${c.reward_code}" used in TOAST\n\n${c.name}'s card reset to 0/10`);
+        
+        currentView = 'employee';
+        currentCustomer = null;
+        render();
+      }
+
+      function generateRewardCode() {
+        const codes = ['COFFEE','ESPRES','LATTE1','MOCHA1','BEANS1','ORIGIN','SMOOTH','STRONG','SWEET1','CREAM1'];
+        return codes[Math.floor(Math.random() * codes.length)];
+      }
+
+      async function viewCustomers() {
+        const customers = await window.supabaseAPI.getCustomers();
+        let message = `📋 CUSTOMERS (${customers.length}):\n\n`;
+        customers.slice(0, 10).forEach(c => {
+          message += `${c.name}\n${c.phone} | ${c.punches}/10 punches\n\n`;
+        });
+        alert(message);
+      }
+
+      // Inicializar
+      window.onload = () => {
+        render();
+        window.supabaseAPI.testConnection();
+      };
+    </script>
+  </body>
 </html>
