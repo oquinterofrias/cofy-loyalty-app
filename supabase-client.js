@@ -43,6 +43,26 @@ async function getCustomerByQR(qrCode) {
   if (error) return null;
   return data;
 }
+,
+getCustomerByPhone: async function(phone) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('customers')
+      .select('*')
+      .eq('phone', phone)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error getting customer by phone:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Error:', err);
+    return null;
+  }
+}
 
 async function createCustomer(customerData) {
   const { data, error } = await supabaseClient
