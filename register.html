@@ -6,6 +6,7 @@
     <title>COF& Loyalty - Register</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
     </style>
@@ -122,16 +123,49 @@
         </div>
 
         <!-- Success Message (hidden by default) -->
+        <!-- Success Message with QR Code -->
         <div id="successMessage" class="hidden">
           <div class="text-center py-8">
             <div class="text-6xl mb-4">🎉</div>
             <h2 class="text-2xl font-bold mb-2" style="color: #3D1E1E">Success!</h2>
-            <p class="text-gray-600 mb-4">Your loyalty card has been created</p>
-            <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-4">
-              <p class="text-sm text-green-800 font-semibold">✓ Card ready to use</p>
-              <p class="text-xs text-green-600 mt-1">Show your QR code at checkout to earn punches</p>
+            <p class="text-gray-600 mb-6">Your loyalty card has been created</p>
+
+            <!-- QR Code Display -->
+            <div class="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-6 mb-6">
+              <p class="text-white font-bold text-lg mb-4">Your Personal QR Code</p>
+              <div class="bg-white rounded-xl p-4 mb-4">
+                <canvas id="qrCanvas" class="mx-auto"></canvas>
+              </div>
+              <p class="text-white text-sm mb-2">Show this QR code when you make a purchase</p>
+              <p class="text-white text-xs opacity-75" id="qrCodeText"></p>
             </div>
-            <p class="text-sm text-gray-600">Your digital card information has been sent to your email.</p>
+
+            <!-- Instructions -->
+            <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-4">
+              <p class="text-sm text-green-800 font-semibold mb-2">✓ How to use your card:</p>
+              <ol class="text-xs text-green-700 text-left space-y-1 list-decimal list-inside">
+                <li>Take a screenshot of this QR code and save it</li>
+                <li>Show it to the barista when you make a purchase</li>
+                <li>Earn 1 stamp per purchase</li>
+                <li>Get a free drink after 10 stamps!</li>
+              </ol>
+            </div>
+
+            <!-- Save Button -->
+            <button 
+              onclick="downloadQR()" 
+              class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-semibold mb-3 hover:shadow-lg transition"
+            >
+              📥 Download QR Code
+            </button>
+
+            <!-- Customer Info -->
+            <div class="bg-gray-50 rounded-xl p-4 text-left">
+              <p class="text-xs font-semibold text-gray-700 mb-2">Your Information:</p>
+              <p class="text-xs text-gray-600" id="customerName"></p>
+              <p class="text-xs text-gray-600" id="customerPhone"></p>
+              <p class="text-xs text-gray-600" id="customerEmail"></p>
+            </div>
           </div>
         </div>
 
@@ -228,6 +262,23 @@
 
         try {
           await window.supabaseAPI.createCustomer(customerData);
+
+            // Generate QR Code Image
+          const canvas = document.getElementById('qrCanvas');
+          QRCode.toCanvas(canvas, qrCode, {
+            width: 250,
+            margin: 2,
+            color: {
+              dark: '#3D1E1E',
+              light: '#FFFFFF'
+            }
+          });
+
+          // Display customer info
+          document.getElementById('qrCodeText').textContent = qrCode;
+          document.getElementById('customerName').textContent = `Name: ${name}`;
+          document.getElementById('customerPhone').textContent = `Phone: ${phone}`;
+          document.getElementById('customerEmail').textContent = `Email: ${email}`;
           
           // Show success message
           document.getElementById('registerForm').classList.add('hidden');
@@ -249,6 +300,17 @@
       }
 
       // Test connection on load
+
+        // Download QR Code
+      function downloadQR() {
+        const canvas = document.getElementById('qrCanvas');
+        const url = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const name = document.getElementById('name').value.replace(/\s+/g, '-');
+        link.download = `COF&-Loyalty-${name}.png`;
+        link.href = url;
+        link.click();
+      }
       window.onload = () => {
         window.supabaseAPI.testConnection();
       };
