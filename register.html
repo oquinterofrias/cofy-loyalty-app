@@ -137,7 +137,6 @@
                 <div id="qrCanvas" class="mx-auto"></div>
               </div>
               <p class="text-white text-sm mb-2">Show this QR code when you make a purchase</p>
-              <p class="text-white text-xs opacity-75" id="qrCodeText"></p>
             </div>
 
             <!-- Instructions -->
@@ -300,14 +299,15 @@ qrCanvas.parentElement.replaceChild(qrImage, qrCanvas);
 
         // Download QR Code
       function downloadQR() {
-        const canvas = document.getElementById('qrCanvas');
-        const url = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        const name = document.getElementById('name').value.replace(/\s+/g, '-');
-        link.download = `COF&-Loyalty-${name}.png`;
-        link.href = url;
-        link.click();
-      }
+  const qrImage = document.querySelector('#qrCanvas img') || document.getElementById('qrCanvas');
+  const name = document.getElementById('name').value.replace(/\s+/g, '-');
+  
+  // Crear un link temporal
+  const link = document.createElement('a');
+  link.download = `COF&-Loyalty-${name}.png`;
+  link.href = qrImage.src;
+  link.click();
+}
       window.onload = () => {
         window.supabaseAPI.testConnection();
       };
